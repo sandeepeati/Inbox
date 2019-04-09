@@ -1,19 +1,24 @@
 import 'package:flutter/material.dart';
 import 'backdrop.dart';
 import 'package:contacts_service/contacts_service.dart';
+import 'package:sms/sms.dart';
 import 'contacts_viewer.dart';
 import 'chat_history.dart';
 
 void main() async {
   Iterable<Contact> contacts = await ContactsService.getContacts();
-  runApp(Inbox(contacts: contacts.toList()));
+  SmsQuery query = new SmsQuery();
+  List<SmsThread> messageThreads = await query.getAllThreads;
+  runApp(Inbox(contacts: contacts.toList(), msgThreads: messageThreads,));
 }
 
 class Inbox extends StatelessWidget {
   List<Contact> contacts = new List<Contact>();
+  List<SmsThread> msgThreads = new List<SmsThread>();
 
-  Inbox({List<Contact> contacts}) {
+  Inbox({List<Contact> contacts, List<SmsThread> msgThreads}) {
     this.contacts = contacts;
+    this.msgThreads = msgThreads;
   }
 
   @override
@@ -24,7 +29,9 @@ class Inbox extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       home: Scaffold(
         body: Backdrop(
-            frontLayer: ChatHistory(),
+            frontLayer: ChatHistory(
+              msgThreads: this.msgThreads,
+            ),
             backLayer: ContactsViewer(
               contacts: this.contacts,
             ),
