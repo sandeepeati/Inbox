@@ -34,6 +34,7 @@ class Inbox extends StatelessWidget {
             ),
             backLayer: ContactsViewer(
               contacts: this.contacts,
+              smsThreads: this.msgThreads,
             ),
             frontTitle: Text('Inbox'),
             backTitle: Text('Contacts')),
