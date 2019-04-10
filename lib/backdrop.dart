@@ -27,6 +27,8 @@ class _BackdropState extends State<Backdrop>
   final GlobalKey _backdropKey = GlobalKey(debugLabel: 'Backdrop');
 
   AnimationController _controller;
+  String _appBarTitle = 'Inbox';
+  IconData _chatIcon = Icons.chat;
 
   @override
   void initState() {
@@ -51,6 +53,10 @@ class _BackdropState extends State<Backdrop>
   }
 
   void _toggleBackdropLayerVisibility() {
+    setState(() {
+      _appBarTitle = _frontLayerVisible ? 'Contacts' : 'Inbox';
+      _chatIcon = _frontLayerVisible ? Icons.close : Icons.chat;
+    });
     _controller.fling(
       velocity: _frontLayerVisible ? -_flingVelocity : _flingVelocity,
     );
@@ -90,7 +96,7 @@ class _BackdropState extends State<Backdrop>
       centerTitle: true,
       elevation: 0.0,
       title: Text(
-        'Inbox',
+        _appBarTitle,
         textAlign: TextAlign.center,
       ),
       actions: <Widget>[
@@ -104,7 +110,7 @@ class _BackdropState extends State<Backdrop>
         IconButton(
           onPressed: _toggleBackdropLayerVisibility,
           icon: Icon(
-            Icons.chat,
+            _chatIcon,
             semanticLabel: 'Search',
           ),
         ),

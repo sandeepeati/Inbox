@@ -18,10 +18,17 @@ class ChatView extends State<ChatViewer> {
   List<SmsMessage> _smsMessages;
   TextEditingController _msgController = new TextEditingController();
   bool _isComposing = false;
+  SmsSender sender = new SmsSender();
 
   ChatView({SmsThread smsThread}) {
     _smsThread = smsThread;
     _smsMessages = _smsThread.messages;
+  }
+
+  @override
+  void dispose() {
+    _msgController.dispose();
+    super.dispose();
   }
 
   void _handleOnChanged(String text) {
@@ -30,7 +37,53 @@ class ChatView extends State<ChatViewer> {
     });
   }
 
-  void _sendSms(String text) {}
+  void _sendSms(BuildContext context, String text) async {
+    String _address = _smsThread.address;
+
+//    get simcards and let them choose the sim cards
+    SimCardsProvider provider = new SimCardsProvider();
+    List<SimCard> cards = await provider.getSimCards();
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Choose Sim Cards'),
+          content: Text('Choose a sim card to send sms'),
+          actions: <Widget>[
+            FlatButton(
+              child: Text('SIM 1'),
+              onPressed: () {
+                _sendSMS(cards[0], _address, text);
+                Navigator.of(context).pop();
+              },
+            ),
+            FlatButton(
+              child: Text('SIM 2'),
+              onPressed: () {
+                _sendSMS(cards[1], _address, text);
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+
+  }
+
+  void _sendSMS(SimCard card, String _address, String text) {
+    SmsMessage msg = new SmsMessage(_address, text);
+    sender.sendSms(msg, simCard: card);
+    _msgController.clear();
+
+    sender.onSmsDelivered.listen((msg) => {
+    setState(() {
+      _smsThread.messages.insert(0, msg);
+      _smsMessages = _smsThread.messages;
+    })
+    });
+  }
 
   Widget _buildTextComposer() {
     return IconTheme(
@@ -46,7 +99,8 @@ class ChatView extends State<ChatViewer> {
             Flexible(
               child: TextField(
                 controller: _msgController,
-                onSubmitted: _sendSms,
+                onSubmitted: (String text) =>
+                    _sendSms(context, _msgController.text),
                 onChanged: _handleOnChanged,
                 decoration: InputDecoration.collapsed(
                   hintText: 'send msg',
@@ -61,8 +115,9 @@ class ChatView extends State<ChatViewer> {
                 icon: Icon(
                   Icons.send,
                 ),
-                onPressed:
-                    _isComposing ? () => _sendSms(_msgController.text) : null,
+                onPressed: _isComposing
+                    ? () => _sendSms(context, _msgController.text)
+                    : null,
               ),
             ),
           ],
@@ -110,10 +165,8 @@ class _SmsMessage extends StatelessWidget {
 
   List<String> _wrappedText = new List<String>();
 
-
   @override
   Widget build(BuildContext context) {
-
     // TODO: implement build
     return Container(
       margin: EdgeInsets.symmetric(vertical: 10.0),
