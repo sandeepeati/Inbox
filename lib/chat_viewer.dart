@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:sms/sms.dart';
-import 'package:sms/contact.dart';
+import 'package:contacts_service/contacts_service.dart';
 
 class ChatViewer extends StatefulWidget {
   SmsThread _smsThread;
+  String _contactName;
 
   ChatViewer({SmsThread smsThread}) {
     _smsThread = smsThread;
@@ -16,6 +17,8 @@ class ChatViewer extends StatefulWidget {
 class ChatView extends State<ChatViewer> {
   SmsThread _smsThread;
   List<SmsMessage> _smsMessages;
+  List<SimCard> _simCards;
+  SimCard _selectedCard;
   TextEditingController _msgController = new TextEditingController();
   bool _isComposing = false;
   SmsSender sender = new SmsSender();
@@ -23,6 +26,17 @@ class ChatView extends State<ChatViewer> {
   ChatView({SmsThread smsThread}) {
     _smsThread = smsThread;
     _smsMessages = _smsThread.messages;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    getSimCards();
+  }
+
+  void getSimCards() async {
+    SimCardsProvider provider = new SimCardsProvider();
+    _simCards = await provider.getSimCards();
   }
 
   @override
@@ -69,20 +83,20 @@ class ChatView extends State<ChatViewer> {
         );
       },
     );
-
   }
 
   void _sendSMS(SimCard card, String _address, String text) {
     SmsMessage msg = new SmsMessage(_address, text);
+
     sender.sendSms(msg, simCard: card);
     _msgController.clear();
 
     sender.onSmsDelivered.listen((msg) => {
-    setState(() {
-      _smsThread.messages.insert(0, msg);
-      _smsMessages = _smsThread.messages;
-    })
-    });
+          setState(() {
+            _smsThread.messages.insert(0, msg);
+            _smsMessages = _smsThread.messages;
+          })
+        });
   }
 
   Widget _buildTextComposer() {
@@ -163,30 +177,41 @@ class _SmsMessage extends StatelessWidget {
   final String text;
   _SmsMessage({this.text});
 
-  List<String> _wrappedText = new List<String>();
-
   @override
   Widget build(BuildContext context) {
+    double cWidth = MediaQuery.of(context).size.width * 0.7;
     // TODO: implement build
-    return Container(
-      margin: EdgeInsets.symmetric(vertical: 10.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Container(
-            margin: EdgeInsets.only(right: 16.0),
+    return Wrap(
+      children: <Widget>[
+        SizedBox(
+          child: Container(
+            padding: EdgeInsets.all(2.0),
+            margin: EdgeInsets.all(5.0),
+            decoration: BoxDecoration(
+              shape: BoxShape.rectangle,
+              borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(
+                10.0,
+              )),
+              color: Theme.of(context).cardColor,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black45,
+                  blurRadius: 4,
+                ),
+              ],
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Text(
+                text,
+                maxLines: 6,
+                textAlign: TextAlign.start,
+              ),
+            ),
           ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Container(
-                margin: EdgeInsets.only(top: 5.0),
-                child: Text(text),
-              )
-            ],
-          )
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
