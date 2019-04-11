@@ -68,11 +68,11 @@ class Chat extends State<ChatHistory> {
             child: ListTile(
               leading: CircleAvatar(
                 child: Text(
-                  smsHistory[index].address[0],
+                  smsHistory[index].contact.fullName == null ? smsHistory[index].address[0] : smsHistory[index].contact.fullName[0],
                 ),
               ),
               title: Text(
-                smsHistory[index].address,
+                smsHistory[index].contact.fullName == null ? smsHistory[index].address : smsHistory[index].contact.fullName,
               ),
             ),
           ),

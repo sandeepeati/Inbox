@@ -4,7 +4,6 @@ import 'package:sms/sms.dart';
 
 import 'chat_viewer.dart';
 
-
 class ContactsViewer extends StatelessWidget {
   List<Contact> contacts = new List<Contact>();
   List<SmsThread> _smsThreads = new List<SmsThread>();
@@ -17,7 +16,8 @@ class ContactsViewer extends StatelessWidget {
   SmsThread getSmsThread({Contact contact}) {
     for (SmsThread _smsThread in _smsThreads) {
       for (Item phone in contact.phones) {
-        if (phone.value == _smsThread.address) return _smsThread;
+        if (phone.value.contains(_smsThread.address) ||
+            _smsThread.address.contains(phone.value)) return _smsThread;
       }
     }
   }
@@ -37,7 +37,10 @@ class ContactsViewer extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                    builder: (context) => ChatViewer(smsThread: getSmsThread(contact: contacts[index]),)
+                  builder: (context) => ChatViewer(
+                        smsThread: getSmsThread(contact: contacts[index]),
+                        address: contacts[index].phones.toList().first.value,
+                      ),
                 ),
               );
             },

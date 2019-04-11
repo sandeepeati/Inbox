@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:sms/sms.dart';
-import 'package:contacts_service/contacts_service.dart';
+import 'package:sms/contact.dart';
 
 class ChatViewer extends StatefulWidget {
   SmsThread _smsThread;
-  String _contactName;
+  String _address;
 
-  ChatViewer({SmsThread smsThread}) {
+  ChatViewer({SmsThread smsThread, String address}) {
     _smsThread = smsThread;
+    _address = address;
   }
 
   @override
-  ChatView createState() => ChatView(smsThread: _smsThread);
+  ChatView createState() => ChatView(smsThread: _smsThread, address: _address);
 }
 
 class ChatView extends State<ChatViewer> {
@@ -19,13 +20,23 @@ class ChatView extends State<ChatViewer> {
   List<SmsMessage> _smsMessages;
   List<SimCard> _simCards;
   SimCard _selectedCard;
+  ContactQuery _contactQuery = new ContactQuery();
   TextEditingController _msgController = new TextEditingController();
+  String _contactName;
+  String _address;
   bool _isComposing = false;
   SmsSender sender = new SmsSender();
+  Contact _contact;
 
-  ChatView({SmsThread smsThread}) {
+  ChatView({SmsThread smsThread, String address}) {
     _smsThread = smsThread;
-    _smsMessages = _smsThread.messages;
+    _smsMessages = _smsThread != null ? _smsThread.messages : <SmsMessage>[];
+
+    _address = address;
+
+    if (_smsThread == null) {
+      _fillContactName(_address);
+    }
   }
 
   @override
@@ -34,9 +45,25 @@ class ChatView extends State<ChatViewer> {
     getSimCards();
   }
 
+  void _fillContactName(String address) async {
+    _contact = await _contactQuery.queryContact(address);
+    setState(() {
+      _contactName = _contact.fullName;
+    });
+  }
+
   void getSimCards() async {
     SimCardsProvider provider = new SimCardsProvider();
     _simCards = await provider.getSimCards();
+
+    Contact _contact = _smsThread != null ? _smsThread.contact : null;
+
+    setState(() {
+      if (_contactName == null) {
+        _contactName = _contact.fullName;
+        print(_contactName);
+      }
+    });
   }
 
   @override
@@ -52,7 +79,7 @@ class ChatView extends State<ChatViewer> {
   }
 
   void _sendSms(BuildContext context, String text) async {
-    String _address = _smsThread.address;
+    String _address = _smsThread == null ? _contact.address : _smsThread.address;
 
 //    get simcards and let them choose the sim cards
     SimCardsProvider provider = new SimCardsProvider();
@@ -142,10 +169,12 @@ class ChatView extends State<ChatViewer> {
 
   @override
   Widget build(BuildContext context) {
+    if (_smsMessages == null) _smsMessages = new List();
     // TODO: implement build
     return Scaffold(
       appBar: AppBar(
-        title: Text(_smsThread.contact.address),
+        title: Text(
+            _contactName != null ? _contactName : _smsThread.contact.address),
       ),
       body: Column(
         children: <Widget>[
